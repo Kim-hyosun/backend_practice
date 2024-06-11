@@ -12,7 +12,7 @@ app.set('view engine', 'ejs'); //ejs를 쓰겠다.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const { MongoClient } = require('mongodb'); //mongoDB연결
+const { MongoClient, ObjectId } = require('mongodb'); //mongoDB연결
 
 let db;
 const url = process.env.MONGOKEY;
@@ -75,5 +75,24 @@ app.post('/add', async (request, response) => {
   } catch (e) {
     console.log(e);
     response.status(500).send('서버에러남');
+  }
+});
+
+app.get('/detail/:postId', async (req, res) => {
+  try {
+    let result = await db
+      .collection('post')
+      .findOne({ _id: new ObjectId(req.params.postId) });
+
+    //console.log(result);
+    //console.log(req.params);
+
+    if (!result) {
+      res.status(404).send('잘못된 경로로 접근함');
+    } else {
+      res.render('detail.ejs', { result: result });
+    }
+  } catch (e) {
+    res.status(404).send('잘못된 경로로 접근함');
   }
 });

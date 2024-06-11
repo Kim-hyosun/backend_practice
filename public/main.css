@@ -4,6 +4,7 @@ body {
 }
 a {
   text-decoration: none;
+  color: #222;
 }
 .nav {
   display: flex;
@@ -67,4 +68,12 @@ div {
   border: none;
   background: lightgrey;
   border-radius: 5px;
+}
+
+/* detail.ejs style */
+
+.detail-bg {
+  background: white;
+  padding: 15px;
+  margin-top: 10px;
 }
