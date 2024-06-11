@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>document_index</title>
+    <!-- bootstrap : cdn -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous" />
+    <!-- custom style -->
+    <link rel="stylesheet" href="./main.css" />
+    <style></style>
+  </head>
+
+  <body class="grey-bg">
+    <%- include('nav.ejs', {param: "여기는 리스트입니다"}) %>
+
+<!--     <%= JSON.stringify(postList) %> -->
+
+    <div class="white-bg">
+      <div class="list-box">
+        <h4>글제목임</h4>
+        <p>글내용임</p>
+      </div>
+      <div class="list-box">
+        <h4>글제목임</h4>
+        <p>글내용임</p>
+      </div>
+
+  <% for (let item of postList){ %>
+      <div class="list-box">
+        <h4><%= item.title %></h4>
+        <p><%= item.content %></p>
+      </div>
+  <% } %>
+    <!-- bootstrap : cdn -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"></script>
+  </body>
+</html>
