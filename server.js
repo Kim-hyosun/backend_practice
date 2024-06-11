@@ -8,6 +8,10 @@ app.use(express.static(__dirname + '/public')); //public폴더안에 있는 파�
 
 app.set('view engine', 'ejs'); //ejs를 쓰겠다.
 
+//user가 보낸 정보를 서버에서 쉽게 꺼내보기 위함
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const { MongoClient } = require('mongodb'); //mongoDB연결
 
 let db;
@@ -50,4 +54,26 @@ app.get('/list', async (요청, 응답) => {
 
 app.get('/time', (요청, 응답) => {
   응답.render('time.ejs', { data: new Date() });
+});
+
+app.get('/write', (요청, 응답) => {
+  응답.render('write.ejs');
+});
+
+app.post('/add', async (request, response) => {
+  console.log(request.body);
+  try {
+    if (request.body.title === '' || request.body.content === '') {
+      response.send('제목과 내용란에 무엇이든 적은 후 저장하세요');
+    } else {
+      await db.collection('post').insertOne({
+        title: request.body.title,
+        content: request.body.content,
+      });
+      response.redirect('/list');
+    }
+  } catch (e) {
+    console.log(e);
+    response.status(500).send('서버에러남');
+  }
 });
