@@ -147,3 +147,20 @@ app.put('/like', async (req, res) => {
   //updateOne({원래data}, $unset{like }) -> like라는 필드값 삭제
   res.redirect('/list');
 });
+
+app.delete('/delete', async (req, res) => {
+  //console.log(req.query); //url?key=value꺼내기
+  try {
+    if (!req.query.postId) {
+      res.status(404).send('잘못된 요청입니다.');
+    } else {
+      await db
+        .collection('post')
+        .deleteOne({ _id: new ObjectId(req.query.postId) });
+
+      res.status(200).send('글 삭제완료');
+    }
+  } catch (e) {
+    res.status(500).send('글 삭제실패');
+  }
+});

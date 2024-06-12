@@ -43,6 +43,10 @@ a {
   margin: 5px;
   color: grey;
 }
+.delete {
+  margin-left: 12px;
+  cursor: pointer;
+}
 
 /* write.ejs style */
 

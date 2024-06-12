@@ -25,19 +25,61 @@
   <% for (let item of postList){ %>
       <div class="list-box">
         <a href="/detail/<%= item._id %>">
-        <h4><%= item.title %> <a href="/edit/<%= item._id %>" class="edit">✏️</a></h4>  
-        <p><%= item.content %></p>
+        <h4><%= item.title %> <a href="/edit/<%= item._id %>" class="edit">✏️</a>      <span class="delete" data-post="<%= item._id %>"> 🗑️</span></h4>  
+        <p><%= item.content.length > 100 ? item.content.slice(0, 100) + "..." : item.content %></p>
         <form action="/like?_method=PUT" method="POST">
           <input name="ID" value="<%= item._id %>" />
-          <button type="submit">❤️</button><span> <%= item.like === 0 ? "" : item.like %> </span></form>
+          <button type="submit">❤️</button><span> <%= item.like === 0 ? "" : item.like %> </span>
+        </form>
+
         </a>
         </div>
     
   <% } %>
-    <!-- bootstrap : cdn -->
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-      crossorigin="anonymous"></script>
+
+  <!-- axios : cdn (ssr에서는 require안되고, 브라우저에서는 require못씀 ) -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> 
+
+  <!-- bootstrap : cdn -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous">
+  </script>
+
+      <script>
+        const postList = document.querySelectorAll('.delete')
+        for(let item of postList){
+          item.addEventListener('click', (e)=>{
+            let mypost = e.target.dataset.post;
+
+            /* fetch(`/delete?postId=${mypost}`, { method:'DELETE' })
+            .then((r)=> r.text())
+            .then((res)=>{
+              if(res.status === 200){
+                //서버응답 성공시
+                return console.log(res)
+              }else{
+                //서버가 에러코드 전송시 실행할 코드
+              }
+            }).catch((err)=>{
+               //인터넷문제 등으로 실패시 실행할코드
+              console.log(err)
+            }) */
+
+            /* 위 fetch코드를 axios로 쓰면 좀더 편함 + 데이터 삭제 성공시 html지우기 추가*/
+          axios.delete(`/delete?postId=${mypost}`)
+           .then(res => {
+            console.log(res.data);
+            //html 지우기 = style.display="none";으로도 가능
+            e.target.parentElement.parentElement.remove(); 
+            //굳이 html을 지워주는 이유 ? 비동기로 delete메서드 실행하고, 화면 새로고침하면 의미없어서... 
+          })
+           .catch(err => console.error(err));
+           
+          })
+        }
+       
+      </script>
   </body>
 </html>
