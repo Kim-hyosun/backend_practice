@@ -29,6 +29,7 @@
         <p><%= item.content.length > 100 ? item.content.slice(0, 100) + "..." : item.content %></p>
         <form action="/like?_method=PUT" method="POST">
           <input name="ID" value="<%= item._id %>" />
+          <input name="pagenum" value="<%= pagenum %>" />
           <button type="submit">❤️</button><span> <%= item.like === 0 ? "" : item.like %> </span>
         </form>
 
@@ -37,6 +38,12 @@
     
   <% } %>
 
+  <!-- 페이지네이션, 5개 단위로 화면에 포스트를 보여줍니다.  -->
+   <div class="pagenation">
+  <% for (let i = 1 ; i <= allPost.length ; i += 5){ %>
+    <a href="/list/<%= Math.floor((i - 1) / 5) + 1  %>"><%= Math.floor((i - 1) / 5) + 1 %></a>
+  <% } %>
+</div>
   <!-- axios : cdn (ssr에서는 require안되고, 브라우저에서는 require못씀 ) -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> 
 
@@ -76,7 +83,6 @@
             //굳이 html을 지워주는 이유 ? 비동기로 delete메서드 실행하고, 화면 새로고침하면 의미없어서... 
           })
            .catch(err => console.error(err));
-           
           })
         }
        

@@ -10,6 +10,7 @@ a {
 .nav {
   display: flex;
   padding: 15px;
+  justify-content: center;
   align-items: center;
   background: white;
 }
@@ -27,8 +28,9 @@ a {
 }
 .white-bg {
   background: white;
-  margin: 20px;
+  margin: 20px auto 0;
   border-radius: 5px;
+  max-width: 80%;
 }
 .list-box {
   padding: 10px;
@@ -46,6 +48,17 @@ a {
 .delete {
   margin-left: 12px;
   cursor: pointer;
+}
+.pagenation {
+  display: flex;
+  gap: 0 20px;
+  justify-content: center;
+  background-color: gold;
+  border-radius: 0 0 4px 4px;
+}
+.pagenation a {
+  display: block;
+  font-size: 20px;
 }
 
 /* write.ejs style */
@@ -84,6 +97,7 @@ div {
 }
 
 /* edit.ejs */
-input[name='ID'] {
+input[name='ID'],
+input[name='pagenum'] {
   display: none;
 }

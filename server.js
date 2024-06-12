@@ -48,11 +48,22 @@ app.get('/news', (요청, 응답) => {
   //db.collection('post').insertOne({title : '어쩌구'})
 });
 
-app.get('/list', async (요청, 응답) => {
-  let result = await db.collection('post').find().toArray();
+app.get('/list/:pagenum', async (요청, 응답) => {
+  let result = await db
+    .collection('post')
+    .find()
+    .skip((요청.params.pagenum - 1) * 5)
+    .limit(5)
+    .toArray();
+
+  let allList = await db.collection('post').find().toArray();
   //console.log(result);
 
-  응답.render('list.ejs', { postList: result });
+  응답.render('list.ejs', {
+    postList: result,
+    allPost: allList,
+    pagenum: 요청.params.pagenum,
+  });
   //응답으로 list.ejs를 보내고, ejs파일안에 db의 데이터를 보내라
   //응답은 1번만 처리 가능
 });
@@ -145,7 +156,7 @@ app.put('/like', async (req, res) => {
   ); //updateOne({원래data}, $inc:{like: -1}) ->더하기빼기
   //updateOne({원래data}, $mul{like: 2 }) -> 2곱하기
   //updateOne({원래data}, $unset{like }) -> like라는 필드값 삭제
-  res.redirect('/list');
+  res.redirect(`/list/${req.body.pagenum}`);
 });
 
 app.delete('/delete', async (req, res) => {
