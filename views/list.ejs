@@ -12,7 +12,7 @@
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous" />
     <!-- custom style -->
-    <link rel="stylesheet" href="./main.css" />
+    <link rel="stylesheet" href="/main.css" />
     <style></style>
   </head>
 
@@ -25,8 +25,11 @@
   <% for (let item of postList){ %>
       <div class="list-box">
         <a href="/detail/<%= item._id %>">
-        <h4><%= item.title %></h4>
+        <h4><%= item.title %> <a href="/edit/<%= item._id %>" class="edit">✏️</a></h4>  
         <p><%= item.content %></p>
+        <form action="/like?_method=PUT" method="POST">
+          <input name="ID" value="<%= item._id %>" />
+          <button type="submit">❤️</button><span> <%= item.like === 0 ? "" : item.like %> </span></form>
         </a>
         </div>
     

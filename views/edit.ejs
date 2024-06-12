@@ -17,13 +17,22 @@
   </head>
 
   <body class="grey-bg">
-    <%- include('nav.ejs', {param: "여기는 글작성공간입니다"}) %>
+    <%- include('nav.ejs', {param: "여기는 글수정공간입니다"}) %>
 
-    <form class="form-box" action="/add" method="POST">
-      <h4>글쓰기</h4>
-      <input name="title" type="text" placeholder="제목" />
-      <input name="content" type="text" placeholder="내용" />
-      <button type="submit">저장</button>
+    <form class="form-box" action="/edit?_method=PUT" method="POST">
+      <h4>글 수정하기</h4>
+      <input name="ID" value="<%= result._id %>" />
+      <input
+        name="title"
+        type="text"
+        placeholder="제목"
+        value="<%= result.title %>" />
+      <input
+        name="content"
+        type="text"
+        placeholder="내용"
+        value="<%= result.content %>" />
+      <button type="submit">수정</button>
     </form>
 
     <!-- bootstrap : cdn -->

@@ -12,6 +12,11 @@ app.set('view engine', 'ejs'); //ejs를 쓰겠다.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+//method-override 라이브러리 쓰겠다.
+//form 태그로는 get,post만 가능해서 put,delete쓰기위해...
+const methodOverride = require('method-override');
+app.use(methodOverride('_method'));
+
 const { MongoClient, ObjectId } = require('mongodb'); //mongoDB연결
 
 let db;
@@ -61,7 +66,7 @@ app.get('/write', (요청, 응답) => {
 });
 
 app.post('/add', async (request, response) => {
-  console.log(request.body);
+  //console.log(request.body);
   try {
     if (request.body.title === '' || request.body.content === '') {
       response.send('제목과 내용란에 무엇이든 적은 후 저장하세요');
@@ -69,6 +74,7 @@ app.post('/add', async (request, response) => {
       await db.collection('post').insertOne({
         title: request.body.title,
         content: request.body.content,
+        like: 0,
       });
       response.redirect('/list');
     }
@@ -95,4 +101,49 @@ app.get('/detail/:postId', async (req, res) => {
   } catch (e) {
     res.status(404).send('잘못된 경로로 접근함');
   }
+});
+
+app.get('/edit/:postId', async (req, res) => {
+  let result = await db
+    .collection('post')
+    .findOne({ _id: new ObjectId(req.params.postId) });
+  console.log(result);
+  res.render('edit.ejs', { result });
+});
+
+app.put('/edit', async (req, res) => {
+  try {
+    if (req.body.title === '' || req.body.content === '') {
+      res.send('제목과 내용란에 글을 기입한 후 수정버튼을 이용하세요');
+    } else {
+      let result = await db.collection('post').updateOne(
+        { _id: new ObjectId(req.body.ID) }, //input에서 보내는 ID값으로 db정보 특정
+        {
+          $set: { title: req.body.title, content: req.body.content },
+        }
+      ); //updateOne({원래data}, $set:{바꿀data})
+      if (result.matchedCount === 0) {
+        //조건에 맞는 문서가 없으면
+        return res
+          .status(404)
+          .send('수정하고자 하는 문서를 찾을 수 없습니다. ');
+      }
+      //console.log(result);
+      res.redirect('/list');
+    }
+  } catch (e) {
+    res.status(404).send('잘못된 경로로 접근함');
+  }
+});
+
+app.put('/like', async (req, res) => {
+  await db.collection('post').updateOne(
+    { _id: new ObjectId(req.body.ID) },
+    {
+      $inc: { like: +1 },
+    }
+  ); //updateOne({원래data}, $inc:{like: -1}) ->더하기빼기
+  //updateOne({원래data}, $mul{like: 2 }) -> 2곱하기
+  //updateOne({원래data}, $unset{like }) -> like라는 필드값 삭제
+  res.redirect('/list');
 });

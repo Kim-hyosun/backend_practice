@@ -6,6 +6,7 @@ a {
   text-decoration: none;
   color: #222;
 }
+
 .nav {
   display: flex;
   padding: 15px;
@@ -76,4 +77,9 @@ div {
   background: white;
   padding: 15px;
   margin-top: 10px;
+}
+
+/* edit.ejs */
+input[name='ID'] {
+  display: none;
 }
