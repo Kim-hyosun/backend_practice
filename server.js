@@ -4,6 +4,10 @@ const app = express();
 const dotenv = require('dotenv');
 dotenv.config();
 
+const bcrypt = require('bcrypt'); //bcrypt셋팅
+
+const MongoStore = require('connect-mongo'); //connect-mongo setting
+
 app.use(express.static(__dirname + '/public')); //public폴더안에 있는 파일들(css)을 html에서 가져다가 쓸수있게 함
 
 app.set('view engine', 'ejs'); //ejs를 쓰겠다.
@@ -17,7 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 const methodOverride = require('method-override');
 app.use(methodOverride('_method'));
 
-const { MongoClient, ObjectId } = require('mongodb'); //mongoDB연결
+//mongoDB
+const { MongoClient, ObjectId } = require('mongodb');
 
 let db;
 const url = process.env.MONGOKEY;
@@ -36,6 +41,76 @@ new MongoClient(url)
   .catch((err) => {
     console.log(err);
   });
+
+//passpost 사용설정
+const session = require('express-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+
+app.use(passport.initialize());
+app.use(
+  session({
+    secret: '암호화에 쓸 비번',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 60 * 60 * 1000 }, //세션유효기간ms단위= 60 * 1000 = 60초
+    store: MongoStore.create({
+      //세션정보를 DB에 저장 connect-mongo
+      mongoUrl: url,
+      dbName: 'forum',
+    }),
+  })
+);
+
+app.use(passport.session());
+
+passport.use(
+  new LocalStrategy(async (입력한아이디, 입력한비번, cb) => {
+    try {
+      let result = await db
+        .collection('user')
+        .findOne({ username: 입력한아이디 });
+
+      if (!result) {
+        return cb(null, false, { message: '아이디 DB에 없음' });
+      }
+
+      let hashCompare = await bcrypt.compare(입력한비번, result.password); //사용자 입력비번이랑, DB에 저장된 암호화된 비번 비교해주는 함수bcrypt.compare
+      if (hashCompare) {
+        return cb(null, result);
+      } else {
+        return cb(null, false, { message: '비번불일치' });
+      }
+    } catch (e) {
+      console.log(e, '에러발생');
+      res.status(500).send('로그인 실패');
+    }
+  })
+); //입력아이디, 비번이 DB와 일치하는지 검증
+//위 로직을 실행하려면 API안에서passport.authenticate('local')()호출
+
+//위로직 성공실행되면 아래 로직도 함께 실행됨 ? 성공시 세션 생성
+passport.serializeUser((user, done) => {
+  //user에 로그인중인 유저 정보가 담김
+  // console.log(user);
+  process.nextTick(() => {
+    //node.js에서 내부코드를 비동기처리해줌
+    done(null, { id: user._id, username: user.username });
+    //done의 2번째 파라미터가 세션에 담김
+  });
+});
+
+//유저가 갖고있는 쿠키가 서버로 날아갈때 쿠키를 까서 비교하고 이상없으면, 현재 로그인된 유저정보를 알려줌
+//서버의 api코드 안에서 요청.user하면 어디서든 유저정보 확인가능하게 해줌
+passport.deserializeUser(async (user, done) => {
+  let result = await db
+    .collection('user')
+    .findOne({ _id: new ObjectId(user.id) }); //미리 db 조회해보고 최신user정보를 반환하기
+  delete result.password; //비밀번호는 요청에 담기지 않도록
+  process.nextTick(() => {
+    done(null, result); //result가 요청.user에 들어감
+  });
+});
 
 app.get('/', (req, res) => {
   //index페이지 접속시
@@ -174,4 +249,39 @@ app.delete('/delete', async (req, res) => {
   } catch (e) {
     res.status(500).send('글 삭제실패');
   }
+});
+
+app.get('/login', async (req, res) => {
+  console.log(req.user);
+  res.render('login.ejs');
+});
+
+app.post('/login', async (req, res, next) => {
+  passport.authenticate('local', (error, user, info) => {
+    //err: 에러시정보, user: 성공시정보, info: 실패시정보
+    if (error) return res.status(500).json(error);
+    if (!user) return res.status(401).json(info.message);
+
+    //성공하면 아래 코드 실행: 세션 만듦
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      res.redirect('/');
+    });
+  })(req, res, next);
+});
+
+app.get('/register', (요청, 응답) => {
+  응답.render('register.ejs');
+});
+
+//비밀번호는 hashing해서 DB에 저장함
+app.post('/register', async (요청, 응답) => {
+  let 해시 = await bcrypt.hash(요청.body.password, 10); //숫자는 해싱횟수
+  //console.log(해시);
+
+  await db.collection('user').insertOne({
+    username: 요청.body.username,
+    password: 해시,
+  });
+  응답.redirect('/');
 });
