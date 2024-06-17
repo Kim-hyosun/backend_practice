@@ -33,7 +33,7 @@ a {
   max-width: 80%;
 }
 .list-box {
-  padding: 10px;
+  padding: 10px 30px;
   border-bottom: 1px solid#eee;
 }
 .list-box h4 {
@@ -59,6 +59,13 @@ a {
 .pagenation a {
   display: block;
   font-size: 20px;
+}
+.list_img {
+  display: block;
+  width: 120px;
+  height: 100px;
+  margin-left: auto;
+  margin-top: -30px;
 }
 
 /* write.ejs style */
@@ -95,9 +102,34 @@ div {
   padding: 15px;
   margin-top: 10px;
 }
+:is(.detail-bg) h4,
+p {
+  max-width: 80%;
+  margin: 0 auto;
+}
+.detail_img {
+  display: block;
+  max-width: 80%;
+  margin: 0 auto;
+}
 
 /* edit.ejs */
 input[name='ID'],
 input[name='pagenum'] {
   display: none;
+}
+/* login.ejs style */
+.register {
+  padding: 2px 4px;
+  padding: 13px 10px;
+  background: grey;
+  color: #fff;
+  border-radius: 5px;
+  position: relative;
+  top: -78px;
+  left: 110px;
+}
+.register:hover {
+  background-color: lightgray;
+  color: #222;
 }

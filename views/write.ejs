@@ -19,10 +19,19 @@
   <body class="grey-bg">
     <%- include('nav.ejs', {param: "여기는 글작성공간입니다"}) %>
 
-    <form class="form-box" action="/add" method="POST">
+    <form
+      class="form-box"
+      action="/add"
+      method="POST"
+      enctype="multipart/form-data">
       <h4>글쓰기</h4>
       <input name="title" type="text" placeholder="제목" />
       <input name="content" type="text" placeholder="내용" />
+      <input type="file" name="upload_img" accept="image/*" />
+      <!-- image타입의 파일을 받음 
+       
+      multiple = 여러장 선택 가능
+       s3에서 upload.array('img',몇장까지받을지)로 미들웨어 처리하고 업로드는 요청.files로 확인해야함 -->
       <button type="submit">저장</button>
     </form>
 

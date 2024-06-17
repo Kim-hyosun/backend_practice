@@ -16,6 +16,31 @@ app.set('view engine', 'ejs'); //ejs를 쓰겠다.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+//aws 셋팅
+const { S3Client } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+
+const accessKey = process.env.s3_ACCESS_KEY;
+const secretKey = process.env.s3_SECRET_KEY;
+const s3 = new S3Client({
+  region: 'ap-northeast-2', //서울
+  credentials: {
+    accessKeyId: accessKey,
+    secretAccessKey: secretKey,
+  },
+});
+
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: 'hyosun-bucket',
+    key: function (요청, file, cb) {
+      cb(null, `${Date.now().toString()}_${요청.file}`); //2번째 파라미터는 업로드시 파일명:Date.now().toString()
+    },
+  }),
+});
+
 //method-override 라이브러리 쓰겠다.
 //form 태그로는 get,post만 가능해서 put,delete쓰기위해...
 const methodOverride = require('method-override');
@@ -151,9 +176,27 @@ app.get('/write', (요청, 응답) => {
   응답.render('write.ejs');
 });
 
+//미들웨어 upload.single('img') = input의 이름이 img가진 것이 들어오면 s3에 자동 업로드 해줌
+//업로드 완료시에는 아래 API안에서 request.file로 이미지 URL 꺼낼수 있음
+//여러장 사진 받아올때는 upload.array('img', 3)와 같이 적고 request.files로 꺼내볼수있음
 app.post('/add', async (request, response) => {
   //console.log(request.body);
+  //upload.single('upload_img');
+  //console.log(request.file);
+
   try {
+    // 이미지 업로드 처리하고 에러나는지 확인
+    await new Promise((resolve, reject) => {
+      upload.single('upload_img')(request, response, (err) => {
+        if (err) {
+          reject(err); // 이미지 업로드 실패 시 에러를 reject
+        } else {
+          resolve(); // 이미지 업로드 성공 시 resolve
+        }
+      });
+    });
+
+    //본문검증
     if (request.body.title === '' || request.body.content === '') {
       response.send('제목과 내용란에 무엇이든 적은 후 저장하세요');
     } else {
@@ -161,8 +204,9 @@ app.post('/add', async (request, response) => {
         title: request.body.title,
         content: request.body.content,
         like: 0,
+        img: request.file ? request.file.location : '',
       });
-      response.redirect('/list');
+      response.redirect('/list/1');
     }
   } catch (e) {
     console.log(e);

@@ -26,7 +26,11 @@
       <div class="list-box">
         <a href="/detail/<%= item._id %>">
         <h4><%= item.title %> <a href="/edit/<%= item._id %>" class="edit">✏️</a>      <span class="delete" data-post="<%= item._id %>"> 🗑️</span></h4>  
+
         <p><%= item.content.length > 100 ? item.content.slice(0, 100) + "..." : item.content %></p>
+
+        <%- item.img ? `<img src="${item.img}" alt="Image_${item.title}" class="list_img" />` : '' %>
+       
         <form action="/like?_method=PUT" method="POST">
           <input name="ID" value="<%= item._id %>" />
           <input name="pagenum" value="<%= pagenum %>" />

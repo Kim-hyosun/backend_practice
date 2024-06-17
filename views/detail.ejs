@@ -21,6 +21,11 @@
     <!-- <%= JSON.stringify(result) %> -->
     <div class="detail-bg">
       <h4><%= result.title %></h4>
+      <%- result.img ? `<img
+        src="${result.img}"
+        alt="Image"
+        class="detail_img" />` : '' %>
+
       <p><%= result.content %></p>
     </div>
 
