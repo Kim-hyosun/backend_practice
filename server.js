@@ -147,7 +147,8 @@ app.use((req, res, next) => {
 
 app.get('/', (req, res) => {
   //index페이지 접속시
-  res.sendFile(__dirname + '/index.html');
+  /* res.sendFile(__dirname + '/index.html'); */
+  res.render('index.ejs');
 });
 
 app.get('/news', (요청, 응답) => {
