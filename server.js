@@ -52,8 +52,9 @@ const { MongoClient, ObjectId } = require('mongodb');
 let db;
 const url = process.env.MONGOKEY;
 const PORT = process.env.PORT || 8080;
-new MongoClient(url)
-  .connect()
+const connectDB = require('./database.js');
+
+connectDB
   .then((client) => {
     console.log('DB연결성공');
     db = client.db('forum');
@@ -295,10 +296,24 @@ app.delete('/delete', async (req, res) => {
   }
 });
 
-app.get('/login', async (req, res) => {
-  console.log(req.user);
-  res.render('login.ejs');
+app.get('/register', (요청, 응답) => {
+  응답.render('register.ejs');
 });
+
+//비밀번호는 hashing해서 DB에 저장함
+app.post('/register', async (요청, 응답) => {
+  let 해시 = await bcrypt.hash(요청.body.password, 10); //숫자는 해싱횟수
+  //console.log(해시);
+
+  await db.collection('user').insertOne({
+    username: 요청.body.username,
+    password: 해시,
+  });
+  응답.redirect('/');
+});
+
+//로그인 route
+app.use('/login', require('./routes/login.js'));
 
 app.post('/login', async (req, res, next) => {
   passport.authenticate('local', (error, user, info) => {
@@ -314,18 +329,36 @@ app.post('/login', async (req, res, next) => {
   })(req, res, next);
 });
 
-app.get('/register', (요청, 응답) => {
-  응답.render('register.ejs');
-});
+app.get('/search', async (요청, 응답) => {
+  //console.log(요청.query.val);
+  let 검색조건 = [
+    {
+      $search: {
+        index: 'title_index',
+        text: { query: 요청.query.val, path: ['title', 'content'] },
+      },
+    },
+    /* { $sort: {_id:1}정렬 },   { $skip: '몇개씩 스킵할지 숫자' },{ $limit: '몇개씩 가져올지 숫자' }, {$project: {title: 해당필드를 1이면 보여주세요, 0이면 숨겨주세요}}*/
+  ];
+  let result = await db
+    .collection('post')
+    .aggregate(검색조건) //[{조건1},{조건2}]
+    .toArray(); //db에서 검색어와 일치하는 데이터를 찾음
 
-//비밀번호는 hashing해서 DB에 저장함
-app.post('/register', async (요청, 응답) => {
-  let 해시 = await bcrypt.hash(요청.body.password, 10); //숫자는 해싱횟수
-  //console.log(해시);
+  /*   
+  let 검색성능평가1 = await db
+    .collection('post')
+    .find({ $text: { $search: 요청.query.val } })
+    .explain('executionStats');  //인덱스로 검색
 
-  await db.collection('user').insertOne({
-    username: 요청.body.username,
-    password: 해시,
-  });
-  응답.redirect('/');
+  let 검색성능평가2 = await db
+    .collection('post')
+    .find({ title: { $regex: 요청.query.val } })
+    .explain('executionStats');//정규식으로 일치값 검색 
+
+  console.log(검색성능평가1, 검색성능평가2);
+    // totalDocsExamined : 검색값 도출위해 확인한 DB값 개수
+    executionStages.stage : COLLSCAN이면 문제있음 - DB전부를 보고있다는 의미
+  */
+  응답.render('search.ejs', { postList: result, pagenum: 요청.params.pagenum });
 });

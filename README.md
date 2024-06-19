@@ -10,3 +10,5 @@
 - 유저가 서버요청 넣을 때 마다 함께 던지는 쿠키 확인 = passport.deserializeUser()
 - 비밀번호 암호화 hashing은 bcrypt이용(salt+hash)
 - 세션데이터의 DB저장은 connect-mongo이용
+
+# 검색기능 : MongoDB search Index

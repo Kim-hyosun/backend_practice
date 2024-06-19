@@ -17,7 +17,7 @@
   </head>
 
   <body class="grey-bg">
-    <%- include('nav.ejs', {param: "여기는 리스트입니다"}) %>
+    <%- include('nav.ejs', {param: "검색 결과입니다"}) %>
 
 <!--     <%= JSON.stringify(postList) %> -->
 
@@ -30,34 +30,35 @@
     location.href = `/search?val=${inputData}`; //get요청 - 해당 URL로 이동
   })
 </script>
-
+<h4>검색 결과</h4>
     <div class="white-bg">
-  <% for (let item of postList){ %>
-      <div class="list-box">
-        <a href="/detail/<%= item._id %>">
-        <h4><%= item.title %> <a href="/edit/<%= item._id %>" class="edit">✏️</a>      <span class="delete" data-post="<%= item._id %>"> 🗑️</span></h4>  
+      <% for (let item of postList){ %>
+        <div class="list-box">
+          <a href="/detail/<%= item._id %>">
+          <h4><%= item.title %> <a href="/edit/<%= item._id %>" class="edit">✏️</a>      <span class="delete" data-post="<%= item._id %>"> 🗑️</span></h4>  
+  
+          <p><%= item.content.length > 100 ? item.content.slice(0, 100) + "..." : item.content %></p>
+  
+          <%- item.img ? `<img src="${item.img}" alt="Image_${item.title}" class="list_img" />` : '' %>
+         
+          <form action="/like?_method=PUT" method="POST">
+            <input name="ID" value="<%= item._id %>" />
+            <input name="pagenum" value="<%= pagenum %>" />
+            <button type="submit">❤️</button><span> <%= item.like === 0 ? "" : item.like %> </span>
+          </form>
+  
+          </a>
+          </div>
+      
+    <% } %>
 
-        <p><%= item.content.length > 100 ? item.content.slice(0, 100) + "..." : item.content %></p>
+<!--   <div class="pagenation">
+    <% for (let i = 1 ; i <= postList.length ; i += 5){ %>
+      <a href="/search/<%= Math.floor((i - 1) / 5) + 1  %>"><%= Math.floor((i - 1) / 5) + 1 %></a>
+    <% } %>
+  </div> -->
 
-        <%- item.img ? `<img src="${item.img}" alt="Image_${item.title}" class="list_img" />` : '' %>
-       
-        <form action="/like?_method=PUT" method="POST">
-          <input name="ID" value="<%= item._id %>" />
-          <input name="pagenum" value="<%= pagenum %>" />
-          <button type="submit">❤️</button><span> <%= item.like === 0 ? "" : item.like %> </span>
-        </form>
-
-        </a>
-        </div>
-    
-  <% } %>
-
-  <!-- 페이지네이션, 5개 단위로 화면에 포스트를 보여줍니다.  -->
-   <div class="pagenation">
-  <% for (let i = 1 ; i <= allPost.length ; i += 5){ %>
-    <a href="/list/<%= Math.floor((i - 1) / 5) + 1  %>"><%= Math.floor((i - 1) / 5) + 1 %></a>
-  <% } %>
-</div>
+ 
   <!-- axios : cdn (ssr에서는 require안되고, 브라우저에서는 require못씀 ) -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> 
 
