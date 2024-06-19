@@ -232,7 +232,12 @@ app.get('/detail/:postId', async (req, res) => {
   try {
     let result = await db
       .collection('post')
-      .findOne({ _id: new ObjectId(req.params.postId) });
+      .findOne({ _id: new ObjectId(req.params.postId) }); //postdata
+
+    let comments = await db
+      .collection('comment')
+      .find({ parentId: new ObjectId(req.params.postId) })
+      .toArray(); //post에 대한 댓글
 
     //console.log(result);
     //console.log(req.params);
@@ -240,7 +245,7 @@ app.get('/detail/:postId', async (req, res) => {
     if (!result) {
       res.status(404).send('잘못된 경로로 접근함');
     } else {
-      res.render('detail.ejs', { result: result });
+      res.render('detail.ejs', { result: result, comments: comments });
     }
   } catch (e) {
     res.status(404).send('잘못된 경로로 접근함');
@@ -387,4 +392,15 @@ app.get('/logout', (req, res) => {
     }
     res.redirect('/');
   });
+});
+
+//댓글 post
+app.post('/comment', async (요청, 응답) => {
+  let result = await db.collection('comment').insertOne({
+    content: 요청.body.content,
+    writerId: 요청.user._id ? new ObjectId(요청.user._id) : '',
+    writer: 요청.user.username ? 요청.user.username : '',
+    parentId: new ObjectId(요청.body.parentId), //댓글post id
+  });
+  응답.redirect('back');
 });

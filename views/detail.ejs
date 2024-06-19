@@ -20,13 +20,31 @@
     <%- include('nav.ejs', {param: "여기는 세부글보기 입니다"}) %>
     <!-- <%= JSON.stringify(result) %> -->
     <div class="detail-bg">
-      <h4><%= result.title %></h4>
+      <h4 style="padding-bottom: 20px"><%= result.title %></h4>
       <%- result.img ? `<img
         src="${result.img}"
         alt="Image"
         class="detail_img" />` : '' %>
 
       <p><%= result.content %></p>
+
+      <hr style="padding-top: 30px" />
+
+      <form action="/comment" method="POST" class="comment">
+        <input name="content" />
+        <input name="parentId" value="<%= result._id %>" />
+        <button type="submit">댓글작성</button>
+      </form>
+
+      <div style="padding-top: 30px">
+        <p>댓글 <%= comments.length <= 0 ? "": comments.length %></p>
+
+        <% for(let item of comments){%>
+        <p style="padding-top: 6px">
+          <strong><%= item.writer %></strong> <%= item.content %>
+        </p>
+        <% } %>
+      </div>
     </div>
 
     <!-- bootstrap : cdn -->

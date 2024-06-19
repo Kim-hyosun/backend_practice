@@ -145,6 +145,13 @@ p {
   max-width: 80%;
   margin: 0 auto;
 }
+.comment {
+  width: 80%;
+  margin: 0 auto;
+}
+input[name='parentId'] {
+  display: none;
+}
 
 /* edit.ejs */
 input[name='ID'],
