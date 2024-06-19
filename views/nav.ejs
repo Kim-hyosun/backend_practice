@@ -3,8 +3,14 @@
   <a href="/" class="logo">My Blog</a>
   <a href="/list/1">list</a>
   <a href="/write">write</a>
+  <% if (!isAuthenticated) { %>
   <a href="/login">log In</a>
-  <%= param %>
+  <a href="/register" class="register">회원가입하기</a>
+  <% } else { %>
+
+  <p class="sayhi">Welcome, <%= user.username %>!</p>
+  <a href="/logout">Logout</a>
+  <% } %>
 </div>
 <!-- 
 <ul

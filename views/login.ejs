@@ -19,6 +19,7 @@
   <body class="grey-bg">
     <%- include('nav.ejs', {param: "여기는 로그인공간입니다"}) %>
     <div class="white-bg">
+      <% if(!user){ %>
       <form
         class="form-box"
         action="/login"
@@ -33,7 +34,7 @@
           placeholder="비밀번호" />
         <button type="submit">전송</button>
       </form>
-      <a href="/register" class="register">회원가입하기</a>
+      <% } %>
     </div>
 
     <!-- bootstrap : cdn -->

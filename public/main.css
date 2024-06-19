@@ -20,6 +20,13 @@ a {
 .logo {
   font-weight: bold;
 }
+.sayhi {
+  font-weight: bold;
+  display: inline-block;
+  width: 60%;
+  text-align: center;
+  margin: 0;
+}
 
 /* list.ejs style */
 
@@ -67,16 +74,31 @@ a {
   margin-left: auto;
   margin-top: -30px;
 }
+.search_bar {
+  width: 80%;
+  margin: 0 auto;
+  padding-top: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
 .search {
-  margin-left: 20px;
+  width: 80%;
   padding: 5px;
+  border: none;
+  border-bottom: 1px #222 solid;
+  background: #eee;
 }
 .search-send {
   padding: 6px 10px;
   background: lightgray;
   border: none;
-  border-radius: 5px;
-  vertical-align: middle;
+  border-radius: 50%;
+  font-size: 26px;
+}
+.search-send:hover {
+  background-color: #dedede;
 }
 
 /* write.ejs style */
@@ -131,14 +153,10 @@ input[name='pagenum'] {
 }
 /* login.ejs style */
 .register {
-  padding: 2px 4px;
-  padding: 13px 10px;
+  padding: 3px 10px;
   background: grey;
   color: #fff;
   border-radius: 5px;
-  position: relative;
-  top: -78px;
-  left: 110px;
 }
 .register:hover {
   background-color: lightgray;

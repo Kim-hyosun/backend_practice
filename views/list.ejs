@@ -20,10 +20,10 @@
     <%- include('nav.ejs', {param: "여기는 리스트입니다"}) %>
 
 <!--     <%= JSON.stringify(postList) %> -->
-
+<div class="search_bar">
 <input class="search">
-<button class="search-send">검색</button>
-
+<button class="search-send">🔍</button>
+</div>
 <script>
   document.querySelector('.search-send').addEventListener('click', function(){
     let inputData = document.querySelector('.search').value;
@@ -35,7 +35,7 @@
   <% for (let item of postList){ %>
       <div class="list-box">
         <a href="/detail/<%= item._id %>">
-        <h4><%= item.title %> <a href="/edit/<%= item._id %>" class="edit">✏️</a>      <span class="delete" data-post="<%= item._id %>"> 🗑️</span></h4>  
+        <h4><%= item.title %> <a href="/edit/<%= item._id %>" class="edit">✏️</a>      <span class="delete" data-post="<%= item._id %>" data-pagenum="<%= pagenum %>" data-postWriter="<%= item.user %>"> 🗑️</span></h4>  
 
         <p><%= item.content.length > 100 ? item.content.slice(0, 100) + "..." : item.content %></p>
 
@@ -73,6 +73,8 @@
         for(let item of postList){
           item.addEventListener('click', (e)=>{
             let mypost = e.target.dataset.post;
+            let pagenum = e.target.dataset.pagenum;
+            let postWriter = e.target.dataset.postWriter;
 
             /* fetch(`/delete?postId=${mypost}`, { method:'DELETE' })
             .then((r)=> r.text())
@@ -90,10 +92,12 @@
 
             /* 위 fetch코드를 axios로 쓰면 좀더 편함 + 데이터 삭제 성공시 html지우기 추가*/
           axios.delete(`/delete?postId=${mypost}`)
-           .then(res => {
-            console.log(res.data);
+           .then(res => {console.log(res.data.USER, postWriter)
             //html 지우기 = style.display="none";으로도 가능
-            e.target.parentElement.parentElement.remove(); 
+            if(res.data.refresh && res.data.USER === postWriter){ //delete성공, 글 게시자와 로그인사용자가 일치하면
+              e.target.parentElement.parentElement.remove();
+              location.href=`/list/${pagenum}`;
+            } 
             //굳이 html을 지워주는 이유 ? 비동기로 delete메서드 실행하고, 화면 새로고침하면 의미없어서... 
           })
            .catch(err => console.error(err));

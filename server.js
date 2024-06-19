@@ -138,6 +138,13 @@ passport.deserializeUser(async (user, done) => {
   });
 });
 
+// 미들웨어: 로그인 상태를 res.locals에 전달
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.isAuthenticated();
+  res.locals.user = req.user;
+  next();
+});
+
 app.get('/', (req, res) => {
   //index페이지 접속시
   res.sendFile(__dirname + '/index.html');
@@ -150,6 +157,7 @@ app.get('/news', (요청, 응답) => {
 });
 
 app.get('/list/:pagenum', async (요청, 응답) => {
+  //console.log(JSON.stringify(요청.user._id));
   let result = await db
     .collection('post')
     .find()
@@ -164,6 +172,7 @@ app.get('/list/:pagenum', async (요청, 응답) => {
     postList: result,
     allPost: allList,
     pagenum: 요청.params.pagenum,
+    USER: JSON.stringify(요청.user._id),
   });
   //응답으로 list.ejs를 보내고, ejs파일안에 db의 데이터를 보내라
   //응답은 1번만 처리 가능
@@ -184,6 +193,7 @@ app.post('/add', async (request, response) => {
   //console.log(request.body);
   //upload.single('upload_img');
   //console.log(request.file);
+  //console.log(request.user);
 
   try {
     // 이미지 업로드 처리하고 에러나는지 확인
@@ -206,6 +216,8 @@ app.post('/add', async (request, response) => {
         content: request.body.content,
         like: 0,
         img: request.file ? request.file.location : '',
+        user: request.user._id,
+        username: request.user.username,
       });
       response.redirect('/list/1');
     }
@@ -285,11 +297,14 @@ app.delete('/delete', async (req, res) => {
     if (!req.query.postId) {
       res.status(404).send('잘못된 요청입니다.');
     } else {
-      await db
-        .collection('post')
-        .deleteOne({ _id: new ObjectId(req.query.postId) });
+      await db.collection('post').deleteOne({
+        _id: new ObjectId(req.query.postId),
+        user: new ObjectId(req.user._id),
+      }); //두가지 조건을 만족해야 deleteOne실행됨
 
-      res.status(200).send('글 삭제완료');
+      res
+        .status(200)
+        .json({ message: '글 삭제완료', refresh: true, USER: req.user._id });
     }
   } catch (e) {
     res.status(500).send('글 삭제실패');
@@ -324,6 +339,7 @@ app.post('/login', async (req, res, next) => {
     //성공하면 아래 코드 실행: 세션 만듦
     req.logIn(user, (err) => {
       if (err) return next(err);
+
       res.redirect('/');
     });
   })(req, res, next);
@@ -361,4 +377,13 @@ app.get('/search', async (요청, 응답) => {
     executionStages.stage : COLLSCAN이면 문제있음 - DB전부를 보고있다는 의미
   */
   응답.render('search.ejs', { postList: result, pagenum: 요청.params.pagenum });
+});
+
+app.get('/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).send('로그아웃 중 오류가 발생했습니다.');
+    }
+    res.redirect('/');
+  });
 });
