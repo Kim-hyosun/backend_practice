@@ -152,6 +152,13 @@ p {
 input[name='parentId'] {
   display: none;
 }
+.writer {
+  display: block;
+  width: 80%;
+  margin: 0 auto;
+  padding-bottom: 30px;
+  color: #777;
+}
 
 /* edit.ejs */
 input[name='ID'],
@@ -168,4 +175,37 @@ input[name='pagenum'] {
 .register:hover {
   background-color: lightgray;
   color: #222;
+}
+
+/* chat.ejs */
+
+.chat-screen {
+  width: 100%;
+}
+.chat-box {
+  margin-top: 15px;
+  display: flex;
+}
+.chat-box span {
+  padding: 10px;
+  background: #eee;
+}
+.mine {
+  justify-content: end;
+}
+.chat-input {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 5px;
+}
+.chat-button {
+  padding: 10px;
+  border: none;
+  background: lightgrey;
+  border-radius: 5px;
+}
+.role {
+  position: sticky;
+  top: 0;
+  text-align: right;
 }

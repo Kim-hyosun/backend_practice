@@ -16,6 +16,57 @@ app.set('view engine', 'ejs'); //ejs를 쓰겠다.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+//socket.io setting
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+const server = createServer(app); //app.listen을 server.listen으로 변경
+const io = new Server(server);
+
+//mongoDB
+const { ObjectId } = require('mongodb');
+
+let db;
+const url = process.env.MONGOKEY;
+const PORT = process.env.PORT || 8080;
+const connectDB = require('./database.js');
+
+connectDB
+  .then((client) => {
+    console.log('DB연결성공');
+    db = client.db('forum');
+
+    server.listen(PORT, () => {
+      //포트에 서버를 띄우라는 명령
+      console.log(`http://localhost:${PORT} 에서 서버 실행중`);
+    }); //DB연결되면 SERVER를 띄우자
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+
+//passpost 사용설정
+const session = require('express-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+
+const sessionMiddleware = session({
+  secret: '암호화에 쓸 비번뭘로할까나',
+  resave: true,
+  saveUninitialized: true,
+  cookie: { maxAge: 60 * 60 * 1000 }, //세션유효기간ms단위= 1시간으로 설정중 , 60 * 1000 = 60초
+  store: MongoStore.create({
+    //세션정보를 DB에 저장 connect-mongo
+    mongoUrl: url,
+    dbName: 'forum',
+  }),
+  useUnifiedTopology: true,
+});
+
+// Express 앱에 세션 미들웨어 적용
+app.use(sessionMiddleware);
+app.use(passport.initialize());
+app.use(passport.session());
+
 //aws 셋팅
 const { S3Client } = require('@aws-sdk/client-s3');
 const multer = require('multer');
@@ -45,50 +96,6 @@ const upload = multer({
 //form 태그로는 get,post만 가능해서 put,delete쓰기위해...
 const methodOverride = require('method-override');
 app.use(methodOverride('_method'));
-
-//mongoDB
-const { MongoClient, ObjectId } = require('mongodb');
-
-let db;
-const url = process.env.MONGOKEY;
-const PORT = process.env.PORT || 8080;
-const connectDB = require('./database.js');
-
-connectDB
-  .then((client) => {
-    console.log('DB연결성공');
-    db = client.db('forum');
-
-    app.listen(PORT, () => {
-      //포트에 서버를 띄우라는 명령
-      console.log(`http://localhost:${PORT} 에서 서버 실행중`);
-    }); //DB연결되면 SERVER를 띄우자
-  })
-  .catch((err) => {
-    console.log(err);
-  });
-
-//passpost 사용설정
-const session = require('express-session');
-const passport = require('passport');
-const LocalStrategy = require('passport-local');
-
-app.use(passport.initialize());
-app.use(
-  session({
-    secret: '암호화에 쓸 비번',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 60 * 60 * 1000 }, //세션유효기간ms단위= 60 * 1000 = 60초
-    store: MongoStore.create({
-      //세션정보를 DB에 저장 connect-mongo
-      mongoUrl: url,
-      dbName: 'forum',
-    }),
-  })
-);
-
-app.use(passport.session());
 
 passport.use(
   new LocalStrategy(async (입력한아이디, 입력한비번, cb) => {
@@ -144,6 +151,16 @@ app.use((req, res, next) => {
   res.locals.user = req.user;
   next();
 });
+
+//socket에 session 미들웨어 공유
+
+const socketSessionMiddleware = session({
+  secret: '암호화에 쓸 비번뭘로할까나',
+  resave: true,
+  saveUninitialized: true,
+  cookie: { maxAge: 60 * 60 * 1000 },
+});
+io.engine.use(socketSessionMiddleware); //세션미들웨어를 socket.io와 공유
 
 app.get('/', (req, res) => {
   //index페이지 접속시
@@ -403,4 +420,76 @@ app.post('/comment', async (요청, 응답) => {
     parentId: new ObjectId(요청.body.parentId), //댓글post id
   });
   응답.redirect('back');
+});
+
+//detail페이지에서 채팅방db로 생성하고 이동하기
+app.get('/chat/request', async (요청, 응답) => {
+  await db.collection('chatroom').insertOne({
+    member: [요청.user._id, new ObjectId(요청.query.writerId)], //[0]은 나자신, [1]은 작성자(타인)
+    date: new Date(),
+  });
+  응답.redirect('/chat/list');
+});
+
+//chatlist로 입장하기
+app.get('/chat/list', async (요청, 응답) => {
+  let result = await db
+    .collection('chatroom')
+    .find({
+      member: 요청.user._id, //내아이디가 멤버로 들어가있는 것 전부 조회
+    })
+    .toArray();
+  응답.render('chatList.ejs', { chatList: result });
+});
+
+//채팅방내부
+app.get('/chat/detail/:chatId', async (요청, 응답) => {
+  if (!요청.user) return 응답.redirect('/login');
+
+  let result = await db
+    .collection('chatroom')
+    .findOne({ _id: new ObjectId(요청.params.chatId) }); // chatId로 세부 채팅방정보 가져옴
+
+  if (
+    result.member[0].toString() === 요청.user._id.toString() ||
+    result.member[1].toString() === 요청.user._id.toString()
+  ) {
+    //채팅방에 있는 사람이면 화면 조회 가능
+    응답.render('chatDetail.ejs', { result: result });
+  } else {
+    응답.redirect('/login');
+  }
+});
+
+//user가 socket연결시 서버에서 코드 실행
+io.on('connection', (socket) => {
+  console.log('socket 연결성공');
+  const sessionId = socket.request.session; //세션로그인 정보
+  //console.log(sessionId.passport.user.id); //현재 로그인id
+
+  socket.on('클라이언트', (data) => {
+    //client에서 보낸 이름으로 서버에서 데이터 조회
+    //console.log(data);
+    io.emit('서버', '마이네임이즈 서버'); //서버에서 클라이언트로 전송
+  });
+
+  socket.on('ask-join', (data) => {
+    //user가 보낸 join요청처리
+    //console.log('data', data.member);
+    if (
+      sessionId.passport.user.id === data.member[0] ||
+      sessionId.passport.user.id === data.member[1]
+    ) {
+      //채팅방내 멤버만 접근 가능
+      socket.join(data.chatId); //join을 정의할 ID 전달
+    }
+  });
+
+  socket.on('message-send', (data) => {
+    //client에서 'message'로 온 내용을 확인합니다
+    io.to(data.room).emit('message-broadcast', {
+      msg: data.msg,
+      myself: sessionId.passport.user.id.toString(),
+    }); //특정 room으로(to) 메시지 데이터를 전달합니다
+  });
 });
