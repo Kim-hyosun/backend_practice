@@ -17,7 +17,7 @@ connectDB
 */
 
 router.get('/', async (req, res) => {
-  console.log(req.user);
+  //console.log(req.user);
   res.render('login.ejs', { user: req.user });
 });
 

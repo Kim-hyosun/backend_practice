@@ -109,5 +109,38 @@
         }
        
       </script>
+
+      <script>
+
+       //SSE
+        let eventSource = new EventSource('/stream/list');//sse data get요청
+        eventSource.addEventListener('msg',(e)=>{
+          console.log(e.data);
+
+          let data = JSON.parse(e.data);
+
+          let 추가할HTML = `
+              <div class="list-box">
+                <a href="/detail/${data._id}">
+                  <h4>${data.title}
+                    ${JSON.stringify(user._id) === JSON.stringify(data.user) ? `
+                    <a href="/edit/${data._id}" class="edit">✏️</a>
+                    <span class="delete" data-post="${data._id}" data-pagenum="${pagenum}" data-postWriter="${data.user}"> 🗑️</span>` : ''}
+                  </h4>
+                  <p>${data.content.length > 100 ? data.content.slice(0, 100) + "..." : data.content}</p>
+                  ${data.img ? `<img src="${data.img}" alt="Image_${data.title}" class="list_img" />` : ''}
+                  <form action="/like?_method=PUT" method="POST">
+                    <input name="ID" value="${data._id}" />
+                    <input name="pagenum" value="${pagenum}" />
+                    <button type="submit">❤️</button><span> ${data.like === 0 ? "" : data.like} </span>
+                  </form>
+                </a>
+              </div>`;
+
+
+          document.querySelector('.white-bg').insertAdjacentHTML('afterbegin', 추가할HTML);
+
+        })
+      </script>
   </body>
 </html>

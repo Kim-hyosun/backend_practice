@@ -18,12 +18,13 @@
 
   <body class="grey-bg">
     <%- include('nav.ejs', {param: "여기는 세부글보기 입니다"}) %>
-    <!-- <%= JSON.stringify(result) %> -->
+    <!-- <%=
+    JSON.stringify(result) %> -->
     <div class="detail-bg">
       <h4 style="padding-bottom: 10px"><%= result.title %></h4>
 
       <%- result.user ? `<a
-        href="/chat/request?writerId=${result.user}"
+        href="/chat/request?writerId=${result.user}&writername=${result.username}"
         class="writer"
         >작성자 ${result.username}와 채팅하기</a
       >` : `

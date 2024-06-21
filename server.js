@@ -29,11 +29,17 @@ let db;
 const url = process.env.MONGOKEY;
 const PORT = process.env.PORT || 8080;
 const connectDB = require('./database.js');
-
+let changeStream;
 connectDB
   .then((client) => {
     console.log('DB연결성공');
     db = client.db('forum');
+
+    //mongoDB change stream - db연결시 최초 1번만 실행됨
+    let 조건 = [
+      { $match: { operationType: { $in: ['insert', 'delete', 'update'] } } },
+    ]; //insert삽입, delete삭제, update수정될 때만 watch함
+    changeStream = db.collection('post').watch(조건);
 
     server.listen(PORT, () => {
       //포트에 서버를 띄우라는 명령
@@ -424,15 +430,26 @@ app.post('/comment', async (요청, 응답) => {
 
 //detail페이지에서 채팅방db로 생성하고 이동하기
 app.get('/chat/request', async (요청, 응답) => {
-  await db.collection('chatroom').insertOne({
-    member: [요청.user._id, new ObjectId(요청.query.writerId)], //[0]은 나자신, [1]은 작성자(타인)
-    date: new Date(),
-  });
-  응답.redirect('/chat/list');
+  if (요청.user._id.toString() !== 요청.query.writerId) {
+    await db.collection('chatroom').insertOne({
+      member: [요청.user._id, new ObjectId(요청.query.writerId)], //[0]은 나자신, [1]은 작성자(타인)
+      username: [요청.user.username, 요청.query.writername], //[0]은 나자신, [1]은 작성자(타인)
+      date: new Date(),
+    });
+    응답.redirect('/chat/list');
+  } else {
+    응답.send(`
+      <script>
+        alert('채팅기능은 타인과만 이용가능합니다.');
+        window.location.href = '/';
+      </script>
+    `);
+  }
 });
 
 //chatlist로 입장하기
 app.get('/chat/list', async (요청, 응답) => {
+  //console.log(요청.user);
   let result = await db
     .collection('chatroom')
     .find({
@@ -475,7 +492,8 @@ io.on('connection', (socket) => {
 
   socket.on('ask-join', (data) => {
     //user가 보낸 join요청처리
-    //console.log('data', data.member);
+    console.log('data', data.member);
+    console.log(sessionId);
     if (
       sessionId.passport.user.id === data.member[0] ||
       sessionId.passport.user.id === data.member[1]
@@ -491,5 +509,29 @@ io.on('connection', (socket) => {
       msg: data.msg,
       myself: sessionId.passport.user.id.toString(),
     }); //특정 room으로(to) 메시지 데이터를 전달합니다
+  });
+});
+
+//sse - list.ejs에서 get
+app.get('/stream/list', (요청, 응답) => {
+  응답.writeHead(200, {
+    Connection: 'keep-alive',
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+  });
+
+  changeStream.on('change', (result) => {
+    //변동사항이 오면 이벤트를 처리합니다.
+    console.log('Change detected:', result.fullDocument); //result는 변동사항을 담음
+
+    //이벤트가 올때 처리됨
+    응답.write('event: msg\n'); //spacebar도 지켜야함
+    응답.write(`data: ${JSON.stringify(result.fullDocument)}\n\n`); //개행 개수 지키기
+  });
+
+  // 연결이 끊어졌을 때 changeStream 닫기
+  요청.on('close', () => {
+    console.log('Connection closed');
+    changeStream.close();
   });
 });
